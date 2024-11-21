@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDVN Group Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        input, textarea {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            height: 60px;
+        }
+        button {
+            margin: 5px 2px;
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+            border-top: 1px solid #ddd;
+            margin-top: 10px;
+        }
+        li {
+            margin: 10px 0;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            border-radius: 4px;
+            position: relative;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .highlight {
+            background-color: #e6ffe6;
+        }
+        .old-message {
+            color: #888;
+        }
+        .reply-button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: transparent;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .reply-message {
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+            margin-top: 5px;
+            color: #0056b3;
+            font-style: italic;
+        }
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #181818;
+            color: #ffffff;
+        }
+        .container.dark-mode {
+            background: #242424;
+            color: #ffffff;
+        }
+        button.dark-mode {
+            background-color: #0056b3;
+        }
+        .dark-mode li {
+            background-color: #242424;
+            color: #ffffff;
+        }
+        /* Add more styles as needed for dark mode */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column; /* Stack elements vertically */
+                align-items: flex-start; /* Align items to the start */
+            }
+            /* Hide all elements except message list and message input */
+            h2, #userInput, #codeID, button, #toggleButton {
+                display: none; /* Hide these elements */
+            }
+            #messageInput {
+                width: 100%; /* Full width for message input */
+                margin: 5px 0; /* Adjust margin */
+            }
+            ul {
+                width: 100%; /* Full width for message list */
+                margin-top: 10px; /* Space above the list */
+            }
+        }
+        /* Add styles for the emoji picker */
+        .emoji-picker, .sticker-picker {
+            display: none; /* Hidden by default */
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            z-index: 1000;
+        }
+        .emoji, .sticker {
+            cursor: pointer;
+            margin: 5px;
+            font-size: 20px; /* Adjust size as needed */
+        }
+        #emojiButton {
+            background: transparent; /* Make button transparent */
+            border: none; /* Remove border */
+            cursor: pointer; /* Pointer cursor */
+            font-size: 20px; /* Adjust size as needed */
+        }
+        /* Add styles for the cancel icon */
+        .cancel-reply-icon {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 20px; /* Adjust size as needed */
+            display: none; /* Initially hidden */
+        }
+
+        /* Card style for the reply text area */
+        .reply-card {
+            border: 1px solid #ccc; /* Light border */
+            border-radius: 8px; /* Rounded corners */
+            padding: 10px; /* Padding inside the card */
+            background-color: #f9f9f9; /* Light background color */
+            margin-bottom: 10px; /* Space below the card */
+            position: relative; /* Position for the cancel icon */
+        }
+
+        /* Hide background on hover for the cancel icon */
+        .cancel-reply-icon:hover {
+            background: transparent; /* No background on hover */
+        }
+
+        /* Add this CSS for the cancel button */
+        .cancel-button {
+            margin-left: 10px; /* Maintain spacing */
+            padding: 10px 15px; /* Same padding as send button */
+            cursor: pointer; /* Pointer cursor */
+            border: none; /* No border */
+            border-radius: 4px; /* Same border radius */
+            background-color: red; /* Same background color */
+            color: white; /* Same text color */
+            font-weight: bold; /* Same font weight */
+            transition: background-color 0.3s ease; /* Same transition */
+        }
+
+        .cancel-button:hover {
+            background-color: #0056b3; /* Same hover color */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>GROUP CHAT</h2>
+        <input type="text" id="userInput" placeholder="Name" />
+        <input type="number" id="codeID" placeholder="Code" />
+        <div style="position: relative;">
+            <div id="replyCard" class="reply-card" style="display: none;">
+                <span id="replyText"></span>
+            </div>
+            <textarea id="messageInput" placeholder="Message"></textarea>
+            <button id="emojiButton" style="background: transparent; border: none; cursor: pointer; font-size: 20px;">😊</button> <!-- Emoji button -->
+            <div id="emojiPicker" class="emoji-picker">
+                <span class="emoji" onclick="insertEmoji('😀')">😀</span>
+                <span class="emoji" onclick="insertEmoji('😁')">😁</span>
+                <span class="emoji" onclick="insertEmoji('😂')">😂</span>
+                <span class="emoji" onclick="insertEmoji('😍')">😍</span>
+                <span class="emoji" onclick="insertEmoji('😎')">😎</span>
+                <span class="emoji" onclick="insertEmoji('😢')">😢</span>
+                <span class="emoji" onclick="insertEmoji('😡')">😡</span>
+                <span class="emoji" onclick="insertEmoji('👍')">👍</span>
+                <span class="emoji" onclick="insertEmoji('👎')">👎</span>
+                <span class="emoji" onclick="insertEmoji('🎉')">🎉</span>
+                <span class="emoji" onclick="insertEmoji('❤️')">❤</span>
+                <span class="emoji" onclick="insertEmoji('🔥')">🔥</span>
+                <span class="emoji" onclick="insertEmoji('🌟')">🌟</span>
+                <!-- Add more emojis as needed -->
+            </div>
+            <button id="toggleButton" onclick="toggleDarkMode()" style="margin-left: 10px; background: transparent; border: none;">
+                <span id="modeIcon">🌙</span> <!-- Moon icon for dark mode -->
+            </button>
+        </div>
+        <div style="display: flex; align-items: center;"> <!-- Flex container for buttons -->
+            <button onclick="sendMessage()">Send Message</button>
+            <button onclick="sendNotification()">Send Notification</button>
+            <button class="cancel-button" id="cancelReplyButton" onclick="cancelReply()" style="display: none;">Cancel</button> 
+        </div>
+        
+        <ul id="messagesList"></ul>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/ChatHub")
+            .build();
+
+        let currentCodeID = '';
+        let replyTo = null;
+
+        connection.on("ReceiveMessage", (user, message, time, codeID) => {
+            if (codeID === currentCodeID) {
+                addMessageToList(user, message, time);
+                showNotification(user, message);
+            }
+        });
+
+        connection.on("ReceiveNotification", (message) => {
+            alert(`Notification: ${message}`);
+        });
+
+        connection.start().catch(err => console.error("Connection error:", err));
+
+        function addMessageToList(user, message, time) {
+            const li = document.createElement("li");
+            const date = new Date(time);
+            const formattedDate = date.toLocaleDateString();
+            const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            li.innerHTML = `<strong>${user}</strong>: ${message} <br><small>${formattedDate} ${formattedTime}</small>`;
+
+            const replyButton = document.createElement("button");
+            replyButton.textContent = "Reply";
+            replyButton.className = "reply-button";
+            replyButton.onclick = () => {
+                replyTo = { user, message };
+                document.getElementById("replyText").textContent = `Replying to ${user}: ${message}`; // Populate reply text
+                document.getElementById("replyCard").style.display = "block"; // Show reply card
+                document.getElementById("cancelReplyButton").style.display = "block"; // Show cancel button
+            };
+
+            li.appendChild(replyButton);
+            const messagesList = document.getElementById("messagesList");
+            messagesList.insertBefore(li, messagesList.firstChild);
+            styleMessages();
+        }
+
+        function styleMessages() {
+            const messagesList = document.getElementById("messagesList");
+            const messages = messagesList.getElementsByTagName("li");
+            const messageCount = messages.length;
+
+            // Reset styles for all messages
+            for (let i = 0; i < messages.length; i++) {
+                messages[i].classList.remove("highlight", "old-message");
+                messages[i].style.color = ''; // Reset color
+            }
+
+            // Style the last 3 messages as new (green)
+            for (let i = 0; i < Math.min(3, messageCount); i++) {
+                messages[i].style.color = 'green'; // New messages in green
+            }
+
+            // Style older messages (gray)
+            for (let i = 3; i < messageCount; i++) {
+                messages[i].style.color = 'gray'; // Older messages in gray
+            }
+        }
+
+        function sendMessage() {
+            const user = document.getElementById("userInput").value.trim();
+            const message = document.getElementById("messageInput").value.trim();
+            const codeID = document.getElementById("codeID").value.trim();
+
+            // Validate user and codeID before sending the message
+            if (!user || !codeID) {
+                alert("Please enter a valid name and code ID before sending a message.");
+                return;
+            }
+
+            if (!message) {
+                alert("Please enter a message.");
+                return;
+            }
+
+            // Notify if in reply mode
+            // if (replyTo) {
+            //     alert(`Replying to ${replyTo.user}`);
+            // }
+
+            const fullMessage = replyTo ? `<div class="reply-message">Replying to ${replyTo.user}: ${replyTo.message}</div>${message}` : message;
+            currentCodeID = codeID;
+            connection.invoke("SendMessage", user, fullMessage, codeID).catch(err => console.error(err));
+            clearInputs();
+            replyTo = null;
+            document.getElementById("replyCard").style.display = "none"; // Hide reply card
+            document.getElementById("cancelReplyButton").style.display = replyTo ? "block" : "none"; // Show or hide cancel button based on reply mode
+        }
+
+        function sendNotification() {
+            const message = document.getElementById("messageInput").value.trim();
+            if (message) {
+                connection.invoke("SendNotification", message).catch(err => console.error(err));
+                clearInputs();
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById("messageInput").value = ''; // Clear the text area
+        }
+
+        function scrollToBottom() {
+            const messagesList = document.getElementById("messagesList");
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        document.getElementById("messageInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                sendMessage();
+                event.preventDefault();
+            }
+        });
+
+        async function loadMessagesByCodeID() {
+            const codeID = document.getElementById("codeID").value.trim();
+            if (!codeID) {
+                console.log("No codeID provided");
+                return false; 
+            }
+
+            let messages = [];
+            try {
+                messages = await connection.invoke("GetMessagesByCodeID", codeID);
+            } catch (error) {
+                console.error("Error while invoking:", error);
+                return; 
+            }
+
+            document.getElementById("messagesList").innerHTML = '';
+            if (messages.length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "No messages found.";
+                document.getElementById("messagesList").appendChild(li);
+                return; 
+            }
+
+            messages.forEach(({ user, message, timestamp }) => {
+                addMessageToList(user, message, timestamp);
+            });
+            scrollToBottom();
+        }
+
+        document.getElementById("codeID").addEventListener("change", loadMessagesByCodeID);
+
+        function showNotification(user, message) {
+            if (Notification.permission === "granted") {
+                new Notification(`New message from ${user}`, {
+                    body: message,
+                    icon: 'RealtimeApp/assert/5173002_alarm_alert_bell_internet_notice_icon.png'
+
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification(`New message from ${user}`, {
+                            body: message,
+                            icon: 'RealtimeApp/assert/5173002_alarm_alert_bell_internet_notice_icon.png'
+
+                        });
+                    }
+                });
+            }
+        }
+
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("Notification permission granted.");
+                }
+            });
+        }
+
+        function toggleDarkMode() {
+            const body = document.body;
+            const container = document.querySelector('.container');
+            const button = document.getElementById('toggleButton');
+            const icon = document.getElementById('modeIcon');
+
+            body.classList.toggle('dark-mode');
+            container.classList.toggle('dark-mode');
+            button.classList.toggle('dark-mode');
+
+            // Change button background to transparent in dark mode
+            button.style.backgroundColor = body.classList.contains('dark-mode') ? 'transparent' : ''; // Set to transparent in dark mode
+
+            // Change icon based on mode
+            if (body.classList.contains('dark-mode')) {
+                icon.textContent = '☀️'; // Sun icon for light mode
+            } else {
+                icon.textContent = '🌙'; // Moon icon for dark mode
+            }
+        }
+
+        document.getElementById("emojiButton").onclick = function() {
+            const emojiPicker = document.getElementById("emojiPicker");
+            emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block"; // Toggle emoji picker
+        };
+
+        document.getElementById("stickerButton").onclick = function() {
+            const stickerPicker = document.getElementById("stickerPicker");
+            stickerPicker.style.display = stickerPicker.style.display === "block" ? "none" : "block"; // Toggle sticker picker
+        };
+
+        function insertEmoji(emoji) {
+            const messageInput = document.getElementById("messageInput");
+            messageInput.value += emoji; // Insert emoji into the message input
+            document.getElementById("emojiPicker").style.display = "none"; // Hide emoji picker after selection
+        }
+
+        function insertSticker(sticker) {
+            const messageInput = document.getElementById("messageInput");
+            messageInput.value += `![Sticker](${sticker})`; // Insert sticker into the message input
+            document.getElementById("stickerPicker").style.display = "none"; // Hide sticker picker after selection
+        }
+
+        // Hide emoji and sticker picker when clicking outside
+        window.onclick = function(event) {
+            const emojiButton = document.getElementById("emojiButton");
+            const emojiPicker = document.getElementById("emojiPicker");
+            const cancelReplyButton = document.getElementById("cancelReplyButton");
+
+            // Close emoji picker if clicking outside of it and the emoji button
+            if (!emojiButton.contains(event.target) && !emojiPicker.contains(event.target)) {
+                emojiPicker.style.display = "none";
+            }
+
+            // Close reply if clicking outside the message input and cancel button
+            const messageInput = document.getElementById("messageInput");
+            const replyCard = document.getElementById("replyCard");
+            if (!messageInput.contains(event.target) && !cancelReplyButton.contains(event.target) && replyTo) {
+                cancelReply(); // Cancel the reply
+            }
+        };
+
+        // Add this function to handle canceling the reply
+        function cancelReply() {
+            replyTo = null; // Reset replyTo
+            clearInputs(); // Clear the message input
+            document.getElementById("replyCard").style.display = "none"; // Hide reply card
+            document.getElementById("cancelReplyButton").style.display = "none"; // Hide cancel button
+        }
+
+        // Click outside to cancel reply
+        document.addEventListener('click', function(event) {
+            const messageInput = document.getElementById("messageInput");
+            const cancelReplyIcon = document.getElementById("cancelReplyIcon");
+            const replyCard = document.getElementById("replyCard");
+
+            // Check if the click was outside the message input, the cancel icon, and the reply card
+            if (!messageInput.contains(event.target) && !cancelReplyIcon.contains(event.target) && !replyCard.contains(event.target) && replyTo) {
+                cancelReply(); // Cancel the reply
+            }
+        });
+    </script>
+</body>
+</html>

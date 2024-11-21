@@ -1,0 +1,39 @@
+{
+  "Version": 1,
+  "Hash": "jGc6lFlPl1KUlTuEz/8LjtAw7GPXGoc8GzrLeLmos3Y=",
+  "Source": "RealtimeApp",
+  "BasePath": "_content/RealtimeApp",
+  "Mode": "Default",
+  "ManifestType": "Publish",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "RealtimeApp\\wwwroot",
+      "Source": "RealtimeApp",
+      "ContentRoot": "D:\\realTimeChatwithDotnet\\RealtimeApp\\wwwroot\\",
+      "BasePath": "_content/RealtimeApp",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "D:\\realTimeChatwithDotnet\\RealtimeApp\\wwwroot\\index.html",
+      "SourceId": "RealtimeApp",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\realTimeChatwithDotnet\\RealtimeApp\\wwwroot\\",
+      "BasePath": "_content/RealtimeApp",
+      "RelativePath": "index.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "PreserveNewest",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\index.html"
+    }
+  ]
+}
